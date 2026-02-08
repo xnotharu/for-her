@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>For Her</title>
+<style>
+  body {
+    margin: 0;
+    background: #ffd1dc;
+    overflow: hidden;
+  }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+addEventListener("resize", resize);
+resize();
+
+const cx = canvas.width/2;
+const cy = canvas.height/2 + 80;
+const groundY = canvas.height - 50;
+
+/* ---------- Carnations ---------- */
+class Carnation {
+  constructor(){ this.reset(); }
+  reset(){
+    this.x = Math.random()*canvas.width;
+    this.y = Math.random()*canvas.height*0.6;
+    this.size = 10 + Math.random()*12;
+    this.life = 0;
+    this.maxLife = 180 + Math.random()*220;
+  }
+  update(){
+    this.life++;
+    if(this.life > this.maxLife) this.reset();
+    let a = this.life < 40 ? this.life/40 :
+            this.life > this.maxLife-40 ? (this.maxLife-this.life)/40 : 1;
+    ctx.save();
+    ctx.globalAlpha = a * 0.35;
+    ctx.translate(this.x,this.y);
+    ctx.fillStyle="#ffb6c1";
+    for(let i=0;i<6;i++){
+      ctx.beginPath();
+      ctx.ellipse(0,this.size/2,this.size/2,this.size,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.rotate(Math.PI/3);
+    }
+    ctx.restore();
+  }
+}
+const carnations = Array.from({length:16},()=>new Carnation());
+
+/* ---------- Kittens ---------- */
+class Kitten {
+  constructor(x, dir=1){
+    this.x = x;
+    this.y = groundY;
+    this.dir = dir;
+    this.state = Math.floor(Math.random()*3); 
+    this.timer = 0;
+    this.step = Math.random()*Math.PI*2;
+    this.scale = 1.4;
+  }
+
+  draw(){
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.dir * this.scale, this.scale);
+
+    // body
+    ctx.fillStyle="#7a7a7a";
+    ctx.beginPath();
+    ctx.ellipse(0,0,18,11,0,0,Math.PI*2);
+    ctx.fill();
+
+    // head
+    ctx.beginPath();
+    ctx.arc(20,-6,9,0,Math.PI*2);
+    ctx.fill();
+
+    // ears
+    ctx.beginPath();
+    ctx.moveTo(15,-16);
+    ctx.lineTo(18,-10);
+    ctx.lineTo(12,-10);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(25,-16);
+    ctx.lineTo(28,-10);
+    ctx.lineTo(22,-10);
+    ctx.fill();
+
+    // tail
+    ctx.strokeStyle="#7a7a7a";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(-18,-2);
+    ctx.quadraticCurveTo(-30,-14,-20,-20);
+    ctx.stroke();
+
+    // paw licking
+    if(this.state===1){
+      ctx.beginPath();
+      ctx.arc(14,4,4,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  update(){
+    this.timer++;
+    this.step += 0.1;
+
+    if(this.state===0){
+      this.x += 0.4*this.dir;
+      this.y = groundY + Math.sin(this.step)*2;
+    } else {
+      this.y = groundY;
+    }
+
+    if(this.timer>220){
+      this.state = Math.floor(Math.random()*3);
+      this.timer = 0;
+    }
+
+    if(this.x>canvas.width+80) this.x=-80;
+    if(this.x<-80) this.x=canvas.width+80;
+
+    this.draw();
+  }
+}
+
+const kittens = [
+  new Kitten(-100,1),
+  new Kitten(canvas.width+100,-1),
+  new Kitten(-200,1),
+  new Kitten(canvas.width+200,-1)
+];
+
+/* ---------- Cartoon Girls w/ Bouquet Animation ---------- */
+class CartoonGirls {
+  constructor(){
+    this.xBoyish = canvas.width/2 - 120;
+    this.xGirly = canvas.width/2 + 60;
+    this.y = groundY;
+    this.step = 0;
+    this.bouquetOffset = 18; // distance from boy hand to girly
+  }
+
+  drawGirls(){
+    const float = Math.sin(this.step)*2;
+
+    // --- Boyish Girl ---
+    ctx.save();
+    ctx.translate(this.xBoyish,this.y+float);
+
+    // Body
+    ctx.fillStyle="#6c91c2";
+    ctx.fillRect(-15,0,30,60);
+
+    // Head
+    ctx.fillStyle="#f1c27d";
+    ctx.beginPath();
+    ctx.arc(0,-15,12,0,Math.PI*2);
+    ctx.fill();
+
+    // Short hair
+    ctx.fillStyle="#3b3b3b";
+    ctx.fillRect(-12,-22,24,10);
+
+    // Legs
+    ctx.strokeStyle="#f1c27d";
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(-8,60);
+    ctx.lineTo(-8,80);
+    ctx.moveTo(8,60);
+    ctx.lineTo(8,80);
+    ctx.stroke();
+
+    // Bouquet moving toward girly girl
+    ctx.fillStyle="#ff6f91";
+    const bouquetX = 18 + Math.sin(this.step*0.5)*this.bouquetOffset;
+    ctx.beginPath();
+    ctx.arc(bouquetX,20,8,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // --- Girly Girl ---
+    ctx.save();
+    ctx.translate(this.xGirly,this.y+float);
+
+    // Body
+    ctx.fillStyle="#f28db2";
+    ctx.fillRect(-15,0,30,60);
+
+    // Head
+    ctx.fillStyle="#f1c27d";
+    ctx.beginPath();
+    ctx.arc(0,-15,12,0,Math.PI*2);
+    ctx.fill();
+
+    // Long hair
+    ctx.fillStyle="#7b3b3b";
+    ctx.beginPath();
+    ctx.moveTo(-15,-15);
+    ctx.quadraticCurveTo(0,-40,15,-15);
+    ctx.fill();
+
+    // Legs
+    ctx.strokeStyle="#f1c27d";
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(-8,60);
+    ctx.lineTo(-8,80);
+    ctx.moveTo(8,60);
+    ctx.lineTo(8,80);
+    ctx.stroke();
+
+    // Girly reaches a little toward bouquet
+    ctx.strokeStyle="#f1c27d";
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(0,10);
+    ctx.lineTo(-18 + Math.sin(this.step*0.5)*this.bouquetOffset,20);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  update(){
+    this.step += 0.05;
+    this.drawGirls();
+  }
+}
+
+const girls = new CartoonGirls();
+
+/* ---------- Sunflower ---------- */
+const petalCount = 44;
+let grown = 0;
+let seedCount = 0;
+let drift = 0;
+
+function drawPetal(angle,g){
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  const len = (140 + Math.random()*20)*g;
+  const w = 14 + Math.random()*6;
+  const grad = ctx.createLinearGradient(0,0,0,-len);
+  grad.addColorStop(0,"#f1a900");
+  grad.addColorStop(1,"#ffe066");
+  ctx.fillStyle=grad;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.bezierCurveTo(-w,-len*0.4,-w*0.4,-len,0,-len);
+  ctx.bezierCurveTo(w*0.4,-len,w,-len*0.4,0,0);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSeeds(){
+  const g=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<seedCount;i++){
+    const a=i*g;
+    const r=2.8*Math.sqrt(i);
+    ctx.fillStyle="#3d240f";
+    ctx.beginPath();
+    ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,1.5,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawStem(){
+  ctx.strokeStyle="#2f8f5b";
+  ctx.lineWidth=16;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(cx,cy+140);
+  ctx.lineTo(cx,canvas.height);
+  ctx.stroke();
+}
+
+function drawLeaf(){
+  ctx.save();
+  ctx.translate(cx, cy+260);
+  ctx.rotate(-0.6);
+  ctx.fillStyle="#3fa66a";
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.quadraticCurveTo(90,-50,150,-15);
+  ctx.quadraticCurveTo(80,20,0,0);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- Animate ---------- */
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  carnations.forEach(c=>c.update());
+  kittens.forEach(k=>k.update());
+  girls.update();
+
+  drawStem();
+  drawLeaf();
+
+  drift += 0.0004;
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(Math.sin(drift)*0.02);
+  ctx.translate(-cx,-cy);
+
+  for(let i=0;i<Math.floor(grown);i++){
+    const spacing=(Math.PI*2/petalCount)*1.2;
+    drawPetal(i*spacing,1);
+  }
+  if(grown<petalCount){
+    drawPetal(grown*(Math.PI*2/petalCount)*1.2,0.9);
+    grown+=0.45;
+  }
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(cx,cy,46,0,Math.PI*2);
+  ctx.fillStyle="#6b3f1d";
+  ctx.fill();
+
+  if(grown>=petalCount && seedCount<560) seedCount+=4;
+  drawSeeds();
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
